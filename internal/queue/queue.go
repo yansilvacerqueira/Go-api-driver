@@ -12,11 +12,10 @@ type QueueType int
 
 type QueueConnection interface {
 	Publish([]byte) error
-	Consume() error
+	Consume(chan<- QueueDto) error
 }
 
 type Queue struct {
-	config          any
 	QueueConnection QueueConnection
 }
 
@@ -29,18 +28,22 @@ func New(qt QueueType, config any) (q *Queue, err error){
       return nil, fmt.Errorf("Invalid config type")
     }
 
-    q.QueueConnection = NewRabbitMQConnection(config)
+    conn, err := NewRabbitMQConnection(config.(RabbitMQ))
+    if err != nil {
+      return nil, err
+    }
+    q.QueueConnection = conn
 	default:
 		log.Fatal("Invalid Queue Type")
 	}
 
-	return 
+	return q, nil
 }
 
 func (q *Queue) Publish(message []byte) error {
 	return q.QueueConnection.Publish(message)
 }
 
-func (q *Queue) Consume() error {
-  return q.QueueConnection.Consume()
+func (q *Queue) Consume(channelDto chan <- QueueDto) error {
+  return q.QueueConnection.Consume(channelDto)
 }

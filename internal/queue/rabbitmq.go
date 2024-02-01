@@ -15,6 +15,14 @@ type RabbitMQConnection struct {
   conn *amqp.Connection
 }
 
+func NewRabbitMQConnection(config RabbitMQ) (rc *RabbitMQConnection, err error) {
+  rc.config = config
+  
+  rc.conn, err = amqp.Dial(config.URL)
+
+  return rc, err
+}
+
 func (rc *RabbitMQConnection) Publish(message []byte) error {
   ch, err := rc.conn.Channel()
   if err != nil {
@@ -35,7 +43,7 @@ func (rc *RabbitMQConnection) Publish(message []byte) error {
   return ch.PublishWithContext(ctx, "", rc.config.TopicName, false, false, messagePublish)
 }
 
-func (rc *RabbitMQConnection) Consume() error {
+func (rc *RabbitMQConnection) Consume(channelDto chan <- QueueDto) error {
   ch, err := rc.conn.Channel()
   if err != nil {
     return err  
@@ -52,7 +60,14 @@ func (rc *RabbitMQConnection) Consume() error {
   }
 
   for message := range messages {
-    println(string(message.Body)) 
+    
+    dto := QueueDto{
+      FileName: message.Exchange,
+      Path: message.RoutingKey,
+    } 
+    dto.Unmarshal(message.Body)
+    channelDto <- dto
   }
+
   return nil
 }
