@@ -1,3 +1,5 @@
-module github.com/yancerqueira
+module github.com/yancerqueira/Go-api-driver
 
 go 1.18
+
+require github.com/rabbitmq/amqp091-go v1.9.0 // indirect
